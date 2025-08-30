@@ -1,0 +1,130 @@
+<!doctype html>
+<html lang="es">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>RSA · Encriptar / Desencriptar</title>
+  <link rel="stylesheet" href="assets/css/styles.css" />
+</head>
+<body>
+  <header class="container header">
+    <h1>RSA · Demo</h1>
+    <nav id="nav-session" class="nav-session hidden">
+      <span id="lbl-user" class="muted"></span>
+      <button id="btn-logout" class="ghost">Salir</button>
+    </nav>
+  </header>
+
+  <main class="container">
+    <!-- VIEW: LOGIN -->
+    <section id="view-login" data-view class="card max-560">
+      <h2>Inicia sesión</h2>
+      <p class="muted">Entra con tu ID si ya estás registrado, o crea un usuario nuevo.</p>
+
+      <div class="tabs">
+        <button class="tab active" data-tab="existente">Tengo ID</button>
+        <button class="tab" data-tab="nuevo">Crear usuario</button>
+      </div>
+
+      <div class="tab-panels">
+        <div class="tab-panel active" data-panel="existente">
+          <form id="form-login-id" class="stack">
+            <label>
+              Tu ID de usuario
+              <input type="number" name="id" min="1" required />
+            </label>
+            <button type="submit">Entrar</button>
+          </form>
+          <pre class="code" id="out-login-id"></pre>
+        </div>
+
+        <div class="tab-panel" data-panel="nuevo">
+          <form id="form-login-create" class="stack">
+            <label>
+              Tu nombre
+              <input type="text" name="nombre" placeholder="Juan Pérez" required />
+            </label>
+            <button type="submit">Crear y entrar</button>
+          </form>
+          <pre class="code" id="out-login-create"></pre>
+        </div>
+      </div>
+    </section>
+
+    <!-- VIEW: HOME -->
+    <section id="view-home" data-view class="card max-720 hidden">
+      <h2>¿Qué deseas hacer?</h2>
+      <div class="actions">
+        <button id="go-encrypt" class="big">Encriptar</button>
+        <button id="go-decrypt" class="big secondary">Desencriptar</button>
+      </div>
+      <p class="muted small">Recuerda: la encriptación usa la <strong>clave pública</strong> del destinatario; la desencriptación usa tu <strong>clave privada</strong>.</p>
+    </section>
+
+    <!-- VIEW: ENCRYPT -->
+    <section id="view-encrypt" data-view class="card hidden">
+      <button class="ghost back" data-back>← Volver</button>
+      <h2>Encriptar archivo para un usuario</h2>
+      <form id="form-encrypt" class="stack" enctype="multipart/form-data">
+        <div class="grid-2">
+          <label>
+            Yo (emisor)
+            <input id="me-id" type="text" disabled />
+          </label>
+          <label>
+            Destinatario
+            <select id="select-recipient" required>
+              <option value="" disabled selected>Selecciona un usuario…</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="stack">
+          <input id="file-encrypt" class="hidden" type="file" accept=".txt" />
+          <button id="btn-pick-encrypt" type="button">Seleccionar archivo .txt…</button>
+          <span id="chosen-encrypt" class="muted"></span>
+        </div>
+
+        <button type="submit">Encriptar y descargar</button>
+      </form>
+      <pre class="code" id="out-encrypt"></pre>
+    </section>
+
+    <!-- VIEW: DECRYPT -->
+    <section id="view-decrypt" data-view class="card hidden">
+      <button class="ghost back" data-back>← Volver</button>
+      <h2>Desencriptar archivo</h2>
+      <form id="form-decrypt" class="stack">
+        <label>
+          Yo (quien desencripta)
+          <input id="me-id-dec" type="text" disabled />
+        </label>
+
+        <div class="stack">
+          <input id="file-decrypt" class="hidden" type="file" accept=".txt" />
+          <button id="btn-pick-decrypt" type="button" class="secondary">Seleccionar archivo cifrado (.txt)…</button>
+          <span id="chosen-decrypt" class="muted"></span>
+        </div>
+
+        <button type="submit">Desencriptar</button>
+      </form>
+
+      <h3>Contenido desencriptado</h3>
+      <textarea id="decrypted-content" rows="8" readonly placeholder="Aquí aparecerá el contenido…"></textarea>
+      <div class="stack">
+        <button id="btn-download-decrypted" type="button" class="secondary" disabled>Descargar .txt</button>
+      </div>
+      <pre class="code" id="out-decrypt"></pre>
+    </section>
+  </main>
+
+  <footer class="container footnote">
+    <p class="muted small">
+      Demo frontend. Configura la URL del backend en <code>assets/js/api.js</code>.
+    </p>
+  </footer>
+
+  <script src="assets/js/api.js"></script>
+  <script src="assets/js/app.js"></script>
+</body>
+</html>
