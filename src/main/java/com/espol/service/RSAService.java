@@ -1,8 +1,9 @@
 package com.espol.service;
 
 import java.time.LocalDateTime;
-import java.util.logging.Logger;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -23,10 +24,9 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class RSAService {
     
-    private final UsuarioService usuarioService;
     private final UsuarioRepositorio usuarioRepositorio;
     private final ArchivoRepositorio archivoRepositorio;
-    private final Logger logger = Logger.getLogger(RSAService.class.getName());
+    private final Logger logger = LoggerFactory.getLogger(RSAService.class);
 
 
     public EncryptFileResponseDTO encriptarArchivo(MultipartFile archivo, Long receptorId, Long emisorId) {

@@ -26,12 +26,6 @@ public class Usuario {
     @Column(name = "nombre", nullable = false)
     private String nombre;
 
-    @Column(name = "clavePublica", length = 1000)
-    private String clavePublica;
-
-    @Column(name = "clavePrivada", length = 2000)
-    private String clavePrivada;
-
     @Column(name = "p")
     private int p;
 

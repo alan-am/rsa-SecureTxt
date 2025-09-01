@@ -1,17 +1,15 @@
 package com.espol.service;
 
 import java.util.List;
-import java.util.logging.Logger;
-
 import org.springframework.stereotype.Service;
-
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import com.espol.dto.UsuarioRequestDTO;
 import com.espol.dto.UsuarioResponseDTO;
 import com.espol.entity.Usuario;
 import com.espol.exception.UserNotFoundException;
 import com.espol.repository.UsuarioRepositorio;
 import com.espol.service.estrategia.FuncionesAuxiliaresRSA;
-import com.espol.service.estrategia.RSAChatGPT;
 import com.espol.service.estrategia.RSAEquipo;
 
 import lombok.RequiredArgsConstructor;
@@ -21,8 +19,7 @@ import lombok.RequiredArgsConstructor;
 public class UsuarioService {
     
     private final UsuarioRepositorio usuarioRepositorio;
-    private final RSAChatGPT rsaChatGPT;
-    private final Logger logger = Logger.getLogger(UsuarioService.class.getName());
+    private final Logger logger = LoggerFactory.getLogger(UsuarioService.class);
 
 
     public UsuarioResponseDTO buscarUsuarioPorId(Long id) {
