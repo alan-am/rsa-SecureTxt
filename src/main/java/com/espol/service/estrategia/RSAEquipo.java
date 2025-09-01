@@ -1,8 +1,4 @@
 package com.espol.service.estrategia;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.InputStream;
-import java.io.OutputStream;
 import java.nio.charset.StandardCharsets;
 
 public class RSAEquipo{
@@ -31,42 +27,37 @@ public static int[] generarLlavePrivada(int e, int p, int q) {
 }
 
 // Metodo para encriptar un archivo .txt
-public static void encriptarArchivo(String rutaEntrada, String rutaSalida, int e, int n) throws Exception {
-    if (n <= 255) {  // ESTO DEBEMOS CHEQUEARLO XQ SINO CAE LA WEB !!
+public static String encriptarContenido(String contenido, int e, int n) throws Exception {
+    if (n <= 255) {  
         throw new IllegalArgumentException("n debe ser > 255 para poder cifrar cualquier byte.");
     }
-    try (InputStream in = new FileInputStream(rutaEntrada);
-         OutputStream out = new FileOutputStream(rutaSalida)) {
 
-        StringBuilder sb = new StringBuilder();
-        int b;
-        while ((b = in.read()) != -1) {
-            int m = b & 0xFF; // 0..255
-            int c = FuncionesAuxiliaresRSA.modPow(m, e, n);
-            sb.append(c).append(' ');
-        }
-        out.write(sb.toString().getBytes(StandardCharsets.UTF_8));
+    StringBuilder sb = new StringBuilder();
+    byte[] bytes = contenido.getBytes(StandardCharsets.UTF_8);
+
+    for (byte b : bytes) {
+        int m = b & 0xFF; // Asegurar rango 0-255
+        int c = FuncionesAuxiliaresRSA.modPow(m, e, n); // Encriptamos
+        sb.append(c).append(' '); // Guardamos con espacio cada caracter encriptado
     }
+
+    return sb.toString().trim(); 
 }
 
 // Metodo para desencriptar un archivo .txt
+public static String desencriptarContenido(String contenidoCifrado, int d, int n){
+    StringBuilder resultado = new StringBuilder();
 
-public static void desencriptarArchivo(String rutaEntrada, String rutaSalida, int d, int n) throws Exception {
-    String contenido;
-    try (InputStream in = new FileInputStream(rutaEntrada)) {
-        contenido = new String(in.readAllBytes(), StandardCharsets.UTF_8);
-    }
-
-    try (OutputStream out = new FileOutputStream(rutaSalida)) {
-        String[] tokens = contenido.trim().split("\\s+"); // espacios, tabs o saltos de línea
-        for (String t : tokens) {
-            if (!t.isEmpty()) {
-                int c = Integer.parseInt(t);
-                int m = FuncionesAuxiliaresRSA.modPow(c, d, n);
-                out.write((byte) (m & 0xFF)); // escribir el byte original
-            }
+    String[] tokens = contenidoCifrado.trim().split("\\s+"); // espacios, tabs o saltos de línea
+    for (String t : tokens) {
+        if (!t.isEmpty()) {
+            int c = Integer.parseInt(t);
+            int m = FuncionesAuxiliaresRSA.modPow(c, d, n); //ojo agregar excepcion a modPow para evitar errore
+            resultado.append((char) (m & 0xFF)); // reconstruir el carácter original
         }
     }
+
+    return resultado.toString();
 }
 
 }

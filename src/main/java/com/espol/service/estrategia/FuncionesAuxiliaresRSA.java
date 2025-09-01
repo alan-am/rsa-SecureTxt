@@ -1,6 +1,18 @@
 package com.espol.service.estrategia;
 
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.math.BigInteger;
+import java.nio.charset.StandardCharsets;
+import java.security.SecureRandom;
+import java.text.Normalizer;
+
+import org.springframework.web.multipart.MultipartFile;
+
 public class FuncionesAuxiliaresRSA {
+    private static final SecureRandom random = new SecureRandom();
+
 
     // Calcula el MCD usando Euclides
     public static int gcd(int a, int b) {
@@ -49,5 +61,65 @@ public class FuncionesAuxiliaresRSA {
 
         return result;
     }
+
+
+    //generacion de primos
+
+    public static int[] obtener2PrimosRandom() {
+        int p, q;
+
+        do {
+            p = primoRandom();
+            q = primoRandom();
+        } while (p == q); // asegurar que sean distintos
+
+        return new int[]{p, q};
+    }
+
+    private static int primoRandom() {
+        int prime;
+        // generacion de primos de aproximadamente hasta 512
+        prime = BigInteger.probablePrime(6, random).intValue();
+        return prime;
+    }
+
+    // Método auxiliar para quitar tildes y reemplazar ñ por n
+    private static String normalizarTexto(String texto) {
+        if (texto == null) return null;
+
+        String normalizado = Normalizer.normalize(texto, Normalizer.Form.NFD);
+        // Eliminar acentos
+        normalizado = normalizado.replaceAll("\\p{M}", "");
+        // Reemplazar ñ por n
+        normalizado = normalizado.replace("ñ", "n").replace("Ñ", "N");
+
+        return normalizado;
+    }
+
+    // leer contenido archivos
+    public static String devolverContenido(MultipartFile multipartFile) {
+        StringBuilder contenido = new StringBuilder();
+    
+        try (
+            BufferedReader reader = new BufferedReader(
+                new InputStreamReader(multipartFile.getInputStream(), StandardCharsets.UTF_8)
+            )
+        ) {
+            String linea;
+            while ((linea = reader.readLine()) != null) {
+
+                String lineaNormalizada = normalizarTexto(linea);
+                contenido.append(lineaNormalizada).append("\n");
+            }
+        } catch (IOException e) {
+            throw new RuntimeException("Error al leer el archivo", e);
+        }
+
+        return contenido.toString();
+    }
+
+
+
+
 }
 

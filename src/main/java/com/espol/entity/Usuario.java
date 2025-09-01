@@ -26,12 +26,28 @@ public class Usuario {
     @Column(name = "nombre", nullable = false)
     private String nombre;
 
-    @Column(name = "clavePublica", nullable = false, length = 1000)
+    @Column(name = "clavePublica", length = 1000)
     private String clavePublica;
 
-    @Column(name = "clavePrivada", nullable = false, length = 2000)
+    @Column(name = "clavePrivada", length = 2000)
     private String clavePrivada;
 
+    @Column(name = "p")
+    private int p;
 
+    @Column(name = "q")
+    private int q;
+
+    @Column(name = "n")
+    private int n;
+
+    @Column(name = "phi")
+    private int phi;
+
+    @Column(name = "e")
+    private int e;
+
+    @Column(name = "d")
+    private int d;
 
 }

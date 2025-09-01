@@ -1,10 +1,7 @@
 package com.espol.service;
 
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.util.logging.Logger;
 
 import org.springframework.stereotype.Service;
 import org.springframework.web.multipart.MultipartFile;
@@ -12,10 +9,13 @@ import org.springframework.web.multipart.MultipartFile;
 import com.espol.dto.DecryptFileResponseDTO;
 import com.espol.dto.EncryptFileResponseDTO;
 import com.espol.entity.RegistroArchivo;
+import com.espol.entity.Usuario;
 import com.espol.exception.FileProcessingException;
 import com.espol.exception.RSAException;
 import com.espol.repository.ArchivoRepositorio;
-import com.espol.service.estrategia.RSAChatGPT;
+import com.espol.repository.UsuarioRepositorio;
+import com.espol.service.estrategia.FuncionesAuxiliaresRSA;
+import com.espol.service.estrategia.RSAEquipo;
 
 import lombok.RequiredArgsConstructor;
 
@@ -23,9 +23,11 @@ import lombok.RequiredArgsConstructor;
 @RequiredArgsConstructor
 public class RSAService {
     
-    private final RSAChatGPT rsaChatGPT;
     private final UsuarioService usuarioService;
+    private final UsuarioRepositorio usuarioRepositorio;
     private final ArchivoRepositorio archivoRepositorio;
+    private final Logger logger = Logger.getLogger(RSAService.class.getName());
+
 
     public EncryptFileResponseDTO encriptarArchivo(MultipartFile archivo, Long receptorId, Long emisorId) {
         try {
@@ -34,25 +36,27 @@ public class RSAService {
                 throw new FileProcessingException("Solo se permiten archivos .txt");
             }
 
-            // Obtener clave pública del receptor
-            String clavePublica = usuarioService.obtenerClavePublica(receptorId);
-            
-            // Leer contenido del archivo
-            String contenido = new String(archivo.getBytes());
-            
-            // Encriptar contenido
-            String contenidoCifrado = rsaChatGPT.encriptarContenido(contenido, clavePublica);
-            
-            // Registrar archivo en base de datos
+            //buscando usuario en la db
+            Usuario receptor = usuarioRepositorio.findById(receptorId)
+                .orElseThrow(() -> new IllegalArgumentException("Receptor no encontrado con ID: " + receptorId));
+            logger.info("Receptor encontrado: " + receptor.getNombre());
+
+            // Cifrar archivo usando e y n del receptor
+            String contenidoArchivo = FuncionesAuxiliaresRSA.devolverContenido(archivo);
+            String contenidoCifrado = RSAEquipo.encriptarContenido(contenidoArchivo, receptor.getE(), receptor.getN());
+            logger.info("contenido del archivo encriptado completo.");
+
+            // Registrar archivo en db
             RegistroArchivo registro = new RegistroArchivo();
             registro.setNombre(archivo.getOriginalFilename());
             registro.setNombreCifrado("encrypted_" + archivo.getOriginalFilename());
             registro.setEmisorId(emisorId);
             registro.setReceptorId(receptorId);
             registro.setCreatedAt(LocalDateTime.now());
-            
             archivoRepositorio.save(registro);
-            
+            logger.info("Registro de archivo guardado en la base de datos.");
+
+            //devolviendo respuesta a front
             return new EncryptFileResponseDTO(
                 archivo.getOriginalFilename(),
                 contenidoCifrado,
@@ -60,52 +64,32 @@ public class RSAService {
                 receptorId,
                 "Archivo encriptado exitosamente"
             );
-            
-        } catch (IOException e) {
-            throw new FileProcessingException("Error al procesar el archivo: " + e.getMessage(), e);
-        } catch (Exception e) {
+        }catch (Exception e) {
             throw new RSAException("Error al encriptar el archivo: " + e.getMessage(), e);
         }
     }
 
     public DecryptFileResponseDTO desencriptarArchivo(String contenidoCifrado, String nombreArchivo, Long usuarioId) {
-        try {
-            // Obtener clave privada del usuario
-            String clavePrivada = usuarioService.obtenerClavePrivada(usuarioId);
-            
-            // Desencriptar contenido
-            String contenidoDescifrado = rsaChatGPT.desencriptarContenido(contenidoCifrado, clavePrivada);
-            
-            return new DecryptFileResponseDTO(
-                nombreArchivo,
-                contenidoDescifrado,
-                usuarioId,
-                "Archivo desencriptado exitosamente"
-            );
-            
-        } catch (Exception e) {
-            throw new RSAException("Error al desencriptar el archivo: " + e.getMessage(), e);
-        }
-    }
 
-    // Métodos para compatibilidad con la interfaz anterior
-    public void generarClavePublica() {
-        rsaChatGPT.generarClavePublica();
-    }
+        //buscando usuario en la db
+        Usuario usuario = usuarioRepositorio.findById(usuarioId)
+            .orElseThrow(() -> new IllegalArgumentException("Usuario no encontrado con ID: " + usuarioId));
+        logger.info("Usuario encontrado: " + usuario.getNombre());
 
-    public void generarClavePrivada() {
-        rsaChatGPT.generarClavePrivada();
-    }
-    
-    public void generarClaves() {
-        rsaChatGPT.generarClaves();
-    }
+        //obteniendo d y n del usuario
+        int d = usuario.getD();
+        int n = usuario.getN();
+        logger.info("Obteniendo d y n del usuario: d=" + d + ", n=" + n);
+        
+        String contenidoDescifrado = RSAEquipo.desencriptarContenido(contenidoCifrado, d, n);
+        logger.info("Contenido del archivo desencriptado.");
 
-    public void encriptarArchivo(File inputFile, String publicKey) {
-        rsaChatGPT.encriptarArchivo(inputFile, publicKey);
-    }
-
-    public void desencriptarArchivo(File encryptedFile, String privateKey) {
-        rsaChatGPT.desencriptarArchivo(encryptedFile, privateKey);
+        return new DecryptFileResponseDTO(
+            nombreArchivo,
+            contenidoDescifrado,
+            usuarioId,
+            "Archivo desencriptado exitosamente"
+        );
     }
 }
+
