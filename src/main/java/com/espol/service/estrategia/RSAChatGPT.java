@@ -5,27 +5,26 @@ import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.charset.StandardCharsets;
+import java.security.KeyFactory;
 import java.security.KeyPair;
 import java.security.KeyPairGenerator;
 import java.security.NoSuchAlgorithmException;
 import java.security.PrivateKey;
 import java.security.PublicKey;
-import java.security.spec.InvalidKeySpecException;
 import java.security.spec.PKCS8EncodedKeySpec;
 import java.security.spec.X509EncodedKeySpec;
 import java.util.Base64;
-import java.security.KeyFactory;
 
 import javax.crypto.Cipher;
 
-import com.espol.exception.RSAException;
 import com.espol.exception.FileProcessingException;
+import com.espol.exception.RSAException;
 
 public class RSAChatGPT implements EstrategiaEncriptacion {
     
     private PublicKey publicKey;
-    private PrivateKey privateKey;
-    private static final String ALGORITHM = "RSA";
+    private PrivateKey privateKey;                                          
+    private static final String ALGORITHM = "RSA";                      
     private static final int KEY_LENGTH = 2048;
 
     @Override
