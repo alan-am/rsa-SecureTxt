@@ -1,6 +1,6 @@
 :root{
-  --bg: #0D0F36 /*fondo principal*/;
-   --card:#294380; --ink:#e6e8f0; --muted:#a9afc3;
+  --bg: #0D0F36;
+  --card:#294380; --ink:#e6e8f0; --muted:#a9afc3;
   --accent:#FDF4B0; --accent-2:#69D2CD; --danger:#ff6b6b;
   --shadow:0 10px 30px rgba(34, 35, 48, 0.233); --radius:16px;
 }
@@ -95,5 +95,3 @@ button.big{font-size:18px;padding:18px 20px}
   border-radius: 50%;
   border: 1px solid #2a2f52;
 }
-
-

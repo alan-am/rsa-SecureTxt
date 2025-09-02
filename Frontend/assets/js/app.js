@@ -2,7 +2,7 @@
 const qs = (s, r = document) => r.querySelector(s);
 const qsa = (s, r = document) => [...r.querySelectorAll(s)];
 const setJson = (el, obj) => el.textContent = JSON.stringify(obj, null, 2);
-const setText = (el, txt) => el.textContent = txt;
+const setText = (el, txt) => el.textContent = String(txt ?? "");
 const toast = (msg, isError = false) => {
   const el = document.createElement("div");
   el.className = "toast" + (isError ? " danger" : "");
@@ -22,6 +22,35 @@ const toast = (msg, isError = false) => {
   `;
   document.head.appendChild(style);
 })();
+
+/* Helper para mostrar SOLO el mensaje de error */
+function formatErr(err){
+  if (!err) return "Error inesperado";
+  if (typeof err === "string") return err;
+  return err.message || err.error || "Error inesperado";
+}
+function showError(el, err){
+  setText(el, formatErr(err));
+}
+
+/* Heurística sencilla para detectar texto “raro” (no legible) */
+function isLikelyWeirdText(s){
+  if (!s) return true;
+  // Permitimos ASCII imprimible + saltos y caracteres comunes en español:
+  const allowed = /[\t\n\r -~¡¿áéíóúüñÁÉÍÓÚÜÑ]/;
+  let bad = 0, total = 0;
+  for (const ch of s){
+    total++;
+    if (!allowed.test(ch)) bad++;
+  }
+  const ratio = bad / Math.max(1,total);
+
+  // Señales fuertes de problema:
+  const hasReplacement = s.includes("\uFFFD"); // �
+  const hasManyNulls = (s.match(/\u0000/g) || []).length >= 1;
+  // Si más del 10% de chars no son “permitidos” o hay señales fuertes → raro
+  return ratio > 0.10 || hasReplacement || hasManyNulls;
+}
 
 /* Estado de “sesión” (muy simple) */
 const Session = {
@@ -71,7 +100,7 @@ qs("#form-login-id").addEventListener("submit", async (e) => {
     toast(`Bienvenido, ${data.nombre}`);
     boot();
   }catch(err){
-    setJson(outLoginId, err);
+    showError(outLoginId, err);   // solo mensaje
   }
 });
 
@@ -85,7 +114,7 @@ qs("#form-login-create").addEventListener("submit", async (e) => {
     toast(`Usuario creado: ${data.nombre}`);
     boot();
   }catch(err){
-    setJson(outLoginCreate, err);
+    showError(outLoginCreate, err);  // solo mensaje
   }
 });
 
@@ -114,10 +143,13 @@ qs("#form-encrypt").addEventListener("submit", async (e) => {
   const sess = Session.get();
   const archivo = fileEncrypt.files[0];
   const receptorId = selectRecipient.value;
+  const receptorName = selectRecipient.options[selectRecipient.selectedIndex]?.text || `ID ${receptorId}`;
 
-  if(!archivo){ setJson(outEncrypt, {error:true,message:"Selecciona un archivo .txt"}); return; }
-  if(archivo.type && archivo.type !== "text/plain"){ setJson(outEncrypt, {error:true,message:"Debe ser .txt"}); return; }
-  if(!receptorId){ setJson(outEncrypt, {error:true,message:"Selecciona un destinatario"}); return; }
+  // Validación de .txt clara
+  const isTxt = !!archivo && /\.txt$/i.test(archivo.name);
+  if(!archivo){ setText(outEncrypt, "Selecciona un archivo .txt"); return; }
+  if(!isTxt){ setText(outEncrypt, "Sólo se permiten archivos .txt"); return; }
+  if(!receptorId){ setText(outEncrypt, "Selecciona un destinatario"); return; }
 
   try{
     const data = await window.Api.encriptarArchivo({
@@ -125,12 +157,17 @@ qs("#form-encrypt").addEventListener("submit", async (e) => {
       emisorId: sess.id,
       receptorId
     });
-    setJson(outEncrypt, data);
 
-    // Generar archivo .txt con el contenido cifrado
-    const contenido = data.contenidoCifrado || "";
-    const outName = (archivo.name.replace(/\.txt$/i,"") + "_encrypted.txt");
-    if(contenido){
+    // ✅ Mensaje limpio (sin JSON)
+    setText(
+      outEncrypt,
+      `✅ Encriptación exitosa.\nEmisor: ${sess.nombre} (ID ${sess.id})\nReceptor: ${receptorName}`
+    );
+
+    // ⬇️ Descarga automática del archivo cifrado usando la respuesta del backend
+    const contenido = data?.contenidoCifrado || "";
+    if (contenido) {
+      const outName = archivo.name.replace(/\.txt$/i, "") + "_encrypted.txt";
       const blob = new Blob([contenido], { type: "text/plain;charset=utf-8" });
       const a = document.createElement("a");
       a.href = URL.createObjectURL(blob);
@@ -140,11 +177,15 @@ qs("#form-encrypt").addEventListener("submit", async (e) => {
       URL.revokeObjectURL(a.href);
       a.remove();
       toast("Archivo encriptado descargado");
+    } else {
+      // Si por alguna razón el backend no envía contenido
+      toast("Encriptado OK, pero no se recibió el contenido para descargar", true);
     }
   }catch(err){
-    setJson(outEncrypt, err);
+    showError(outEncrypt, err);   // solo mensaje de error
   }
 });
+
 
 async function preloadEncrypt(){
   const sess = Session.get();
@@ -160,7 +201,7 @@ async function preloadEncrypt(){
     selectRecipient.innerHTML = `<option value="" disabled selected>Selecciona un usuario…</option>${options.join("")}`;
   }catch(err){
     selectRecipient.innerHTML = `<option value="" disabled selected>Error al cargar</option>`;
-    setJson(outEncrypt, err);
+    showError(outEncrypt, err);   // solo mensaje
   }
   // reset UI
   fileEncrypt.value = "";
@@ -191,7 +232,9 @@ qs("#form-decrypt").addEventListener("submit", async (e) => {
 
   const sess = Session.get();
   const file = fileDecrypt.files[0];
-  if(!file){ setJson(outDecrypt, {error:true,message:"Selecciona el archivo cifrado (.txt)"}); return; }
+
+  if(!file){ setText(outDecrypt, "Selecciona el archivo cifrado (.txt)"); return; }
+  if(!/\.txt$/i.test(file.name)){ setText(outDecrypt, "Sólo se permiten archivos .txt"); return; }
 
   try{
     const contenidoCifrado = await file.text();
@@ -202,16 +245,22 @@ qs("#form-decrypt").addEventListener("submit", async (e) => {
       usuarioId: sess.id
     });
 
-    setJson(outDecrypt, data);
-
+    // Analizamos el texto plano para mostrar solo mensajes
     const plain = data.contenidoDescifrado || "";
     decryptedContent.value = plain;
     lastDecrypted.name = data.nombreArchivo || nombreArchivo || "archivo.txt";
     lastDecrypted.content = plain;
     btnDownloadDecrypted.disabled = plain.length === 0;
-    if(plain) toast("Archivo desencriptado");
+
+    if (isLikelyWeirdText(plain)) {
+      setText(outDecrypt, "⚠️ Posible problema de desencriptación, puede ser que el archivo no es para ti.");
+      toast("Revisa el destinatario", true);
+    } else {
+      setText(outDecrypt, "✅ Desencriptación exitosa.");
+      toast("Archivo desencriptado");
+    }
   }catch(err){
-    setJson(outDecrypt, err);
+    showError(outDecrypt, err);  // solo mensaje
   }
 });
 
@@ -245,7 +294,6 @@ async function preloadDecrypt(){
   btnDownloadDecrypted.disabled = true;
 }
 
-
 /* Boot */
 function boot(){
   const sess = Session.get();
@@ -261,6 +309,5 @@ function boot(){
   navSession.classList.remove("hidden");
   show("home");
 }
-
 
 boot();
