@@ -1,6 +1,6 @@
 /* Base URL */
-const BASE_URL = "http://localhost:8080";
-// const BASE_URL = "https://rsa-securetxt-production.up.railway.app";
+//const BASE_URL = "http://localhost:8080";
+const BASE_URL = "https://rsa-securetxt-production.up.railway.app";
 
 /* JSON response handler */
 async function handleJson(res, okStatus = 200) {
