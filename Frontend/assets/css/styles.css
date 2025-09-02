@@ -1,17 +1,25 @@
 :root{
-  --bg:#0f1220; --card:#171a2b; --ink:#e6e8f0; --muted:#a9afc3;
-  --accent:#6aa6ff; --accent-2:#57d2a3; --danger:#ff6b6b;
-  --shadow:0 10px 30px rgba(0,0,0,.25); --radius:16px;
+  --bg: #0D0F36 /*fondo principal*/;
+   --card:#294380; --ink:#e6e8f0; --muted:#a9afc3;
+  --accent:#FDF4B0; --accent-2:#69D2CD; --danger:#ff6b6b;
+  --shadow:0 10px 30px rgba(34, 35, 48, 0.233); --radius:16px;
 }
 *{box-sizing:border-box}
 html,body{height:100%}
 body{
+  height:100%;
   margin:0; color:var(--ink);
   font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Helvetica Neue,Arial,sans-serif;
   background: radial-gradient(900px 420px at 20% -10%, #1c2140 0, transparent 60%), var(--bg);
 }
 .container{max-width:980px;margin:0 auto;padding:24px}
-.header{display:flex;align-items:center;justify-content:space-between}
+.header{
+  height:15%;
+  display:flex;align-items:center;justify-content:space-between}
+.logo_espol{
+  height: 100%;
+  width: auto;
+}
 .nav-session{display:flex;gap:8px;align-items:center}
 .hidden{display:none !important}
 .ghost{
@@ -37,11 +45,11 @@ input[type="text"],input[type="number"],select,textarea{
 textarea{resize:vertical}
 button{
   appearance:none;border:0;padding:10px 14px;border-radius:12px;
-  background:linear-gradient(90deg,var(--accent),#7dc8ff);
+  background:linear-gradient(90deg,var(--accent),#F1F6CE);
   color:#0a0d1d;font-weight:700;cursor:pointer;transition:transform .05s ease;
 }
 button:hover{transform:translateY(-1px)}
-button.secondary{background:linear-gradient(90deg,var(--accent-2),#9be9ca)}
+button.secondary{background:linear-gradient(90deg,var(--accent-2),#B9F1D6)}
 button.danger{background:linear-gradient(90deg,var(--danger),#ffa5a5)}
 button.big{font-size:18px;padding:18px 20px}
 .actions{display:flex;gap:12px;flex-wrap:wrap}

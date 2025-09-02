@@ -249,9 +249,12 @@ async function preloadDecrypt(){
 /* Boot */
 function boot(){
   const sess = Session.get();
+  const logo = qs("#logo"); // referencia al logo
+
   if(!sess){
     navSession.classList.add("hidden");
     show("login");
+    if(logo) logo.classList.remove("hidden"); // logo visible en login
     return;
   }
   lblUser.textContent = `Conectado como: ${sess.nombre} (ID ${sess.id})`;
