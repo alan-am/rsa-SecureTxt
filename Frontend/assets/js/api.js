@@ -1,8 +1,8 @@
-// Configura la URL base de tu API (si backend y frontend NO están en el mismo host/puerto).
+/* Base URL */
 const BASE_URL = "http://localhost:8080";
-//const BASE_URL = "https://rsa-securetxt-production.up.railway.app";
+// const BASE_URL = "https://rsa-securetxt-production.up.railway.app";
 
-// Helpers comunes
+/* JSON response handler */
 async function handleJson(res, okStatus = 200) {
   let data, raw = "";
   try { data = await res.json(); }
@@ -19,7 +19,7 @@ async function handleJson(res, okStatus = 200) {
   };
 }
 
-// API pública (expuesta en window.Api)
+/* API */
 const Api = {
   async registrarUsuario(nombre) {
     const res = await fetch(`${BASE_URL}/api/usuarios/registrar`, {

@@ -1,4 +1,4 @@
-/* Utilidades UI */
+/* Utils */
 const qs = (s, r = document) => r.querySelector(s);
 const qsa = (s, r = document) => [...r.querySelectorAll(s)];
 const setJson = (el, obj) => el.textContent = JSON.stringify(obj, null, 2);
@@ -11,7 +11,6 @@ const toast = (msg, isError = false) => {
   setTimeout(() => el.classList.add("show"));
   setTimeout(() => { el.classList.remove("show"); el.addEventListener("transitionend", () => el.remove(), { once:true }); }, 1600);
 };
-// inyecta estilos de toast
 (() => {
   const style = document.createElement("style");
   style.textContent = `
@@ -23,7 +22,7 @@ const toast = (msg, isError = false) => {
   document.head.appendChild(style);
 })();
 
-/* Helper para mostrar SOLO el mensaje de error */
+/* Error message only */
 function formatErr(err){
   if (!err) return "Error inesperado";
   if (typeof err === "string") return err;
@@ -33,10 +32,9 @@ function showError(el, err){
   setText(el, formatErr(err));
 }
 
-/* Heurística sencilla para detectar texto “raro” (no legible) */
+/* Weird text heuristic */
 function isLikelyWeirdText(s){
   if (!s) return true;
-  // Permitimos ASCII imprimible + saltos y caracteres comunes en español:
   const allowed = /[\t\n\r -~¡¿áéíóúüñÁÉÍÓÚÜÑ]/;
   let bad = 0, total = 0;
   for (const ch of s){
@@ -44,22 +42,19 @@ function isLikelyWeirdText(s){
     if (!allowed.test(ch)) bad++;
   }
   const ratio = bad / Math.max(1,total);
-
-  // Señales fuertes de problema:
-  const hasReplacement = s.includes("\uFFFD"); // �
+  const hasReplacement = s.includes("\uFFFD");
   const hasManyNulls = (s.match(/\u0000/g) || []).length >= 1;
-  // Si más del 10% de chars no son “permitidos” o hay señales fuertes → raro
   return ratio > 0.10 || hasReplacement || hasManyNulls;
 }
 
-/* Estado de “sesión” (muy simple) */
+/* Session */
 const Session = {
   get(){ try{ return JSON.parse(localStorage.getItem("rsa_user")||"null"); }catch{ return null; } },
   set(user){ localStorage.setItem("rsa_user", JSON.stringify(user)); },
   clear(){ localStorage.removeItem("rsa_user"); }
 };
 
-/* Referencias de vistas */
+/* Views */
 const views = {
   login: qs("#view-login"),
   home: qs("#view-home"),
@@ -70,13 +65,11 @@ const navSession = qs("#nav-session");
 const lblUser = qs("#lbl-user");
 const btnLogout = qs("#btn-logout");
 
-/* Salir */
 btnLogout.addEventListener("click", () => {
   Session.clear();
   location.reload();
 });
 
-/* Tabs login */
 qsa(".tab").forEach(btn => {
   btn.addEventListener("click", () => {
     qsa(".tab").forEach(b => b.classList.remove("active"));
@@ -86,7 +79,7 @@ qsa(".tab").forEach(btn => {
   });
 });
 
-/* Formularios de login */
+/* Login forms */
 const outLoginId = qs("#out-login-id");
 const outLoginCreate = qs("#out-login-create");
 
@@ -100,7 +93,7 @@ qs("#form-login-id").addEventListener("submit", async (e) => {
     toast(`Bienvenido, ${data.nombre}`);
     boot();
   }catch(err){
-    showError(outLoginId, err);   // solo mensaje
+    showError(outLoginId, err);
   }
 });
 
@@ -114,16 +107,16 @@ qs("#form-login-create").addEventListener("submit", async (e) => {
     toast(`Usuario creado: ${data.nombre}`);
     boot();
   }catch(err){
-    showError(outLoginCreate, err);  // solo mensaje
+    showError(outLoginCreate, err);
   }
 });
 
-/* Navegación principal */
+/* Nav */
 qs("#go-encrypt").addEventListener("click", () => show("encrypt", preloadEncrypt));
 qs("#go-decrypt").addEventListener("click", () => show("decrypt", preloadDecrypt));
 qsa("[data-back]").forEach(b => b.addEventListener("click", () => show("home")));
 
-/* ENCRIPTAR */
+/* Encrypt */
 const meId = qs("#me-id");
 const selectRecipient = qs("#select-recipient");
 const fileEncrypt = qs("#file-encrypt");
@@ -145,7 +138,6 @@ qs("#form-encrypt").addEventListener("submit", async (e) => {
   const receptorId = selectRecipient.value;
   const receptorName = selectRecipient.options[selectRecipient.selectedIndex]?.text || `ID ${receptorId}`;
 
-  // Validación de .txt clara
   const isTxt = !!archivo && /\.txt$/i.test(archivo.name);
   if(!archivo){ setText(outEncrypt, "Selecciona un archivo .txt"); return; }
   if(!isTxt){ setText(outEncrypt, "Sólo se permiten archivos .txt"); return; }
@@ -158,13 +150,11 @@ qs("#form-encrypt").addEventListener("submit", async (e) => {
       receptorId
     });
 
-    // ✅ Mensaje limpio (sin JSON)
     setText(
       outEncrypt,
       `✅ Encriptación exitosa.\nEmisor: ${sess.nombre} (ID ${sess.id})\nReceptor: ${receptorName}`
     );
 
-    // ⬇️ Descarga automática del archivo cifrado usando la respuesta del backend
     const contenido = data?.contenidoCifrado || "";
     if (contenido) {
       const outName = archivo.name.replace(/\.txt$/i, "") + "_encrypted.txt";
@@ -178,20 +168,16 @@ qs("#form-encrypt").addEventListener("submit", async (e) => {
       a.remove();
       toast("Archivo encriptado descargado");
     } else {
-      // Si por alguna razón el backend no envía contenido
       toast("Encriptado OK, pero no se recibió el contenido para descargar", true);
     }
   }catch(err){
-    showError(outEncrypt, err);   // solo mensaje de error
+    showError(outEncrypt, err);
   }
 });
-
 
 async function preloadEncrypt(){
   const sess = Session.get();
   meId.value = `${sess.nombre} (ID ${sess.id})`;
-
-  // Cargar usuarios y poblar destinatarios (excluirme)
   selectRecipient.innerHTML = `<option value="" disabled selected>Cargando…</option>`;
   try{
     const users = await window.Api.listarUsuarios();
@@ -201,15 +187,14 @@ async function preloadEncrypt(){
     selectRecipient.innerHTML = `<option value="" disabled selected>Selecciona un usuario…</option>${options.join("")}`;
   }catch(err){
     selectRecipient.innerHTML = `<option value="" disabled selected>Error al cargar</option>`;
-    showError(outEncrypt, err);   // solo mensaje
+    showError(outEncrypt, err);
   }
-  // reset UI
   fileEncrypt.value = "";
   chosenEncrypt.textContent = "";
   outEncrypt.textContent = "";
 }
 
-/* DESENCRIPTAR */
+/* Decrypt */
 const meIdDec = qs("#me-id-dec");
 const fileDecrypt = qs("#file-decrypt");
 const btnPickDecrypt = qs("#btn-pick-decrypt");
@@ -238,14 +223,13 @@ qs("#form-decrypt").addEventListener("submit", async (e) => {
 
   try{
     const contenidoCifrado = await file.text();
-    const nombreArchivo = file.name.replace(/_encrypted\.txt$/i,".txt"); // mejor esfuerzo
+    const nombreArchivo = file.name.replace(/_encrypted\.txt$/i,".txt");
     const data = await window.Api.desencriptar({
       contenidoCifrado,
       nombreArchivo,
       usuarioId: sess.id
     });
 
-    // Analizamos el texto plano para mostrar solo mensajes
     const plain = data.contenidoDescifrado || "";
     decryptedContent.value = plain;
     lastDecrypted.name = data.nombreArchivo || nombreArchivo || "archivo.txt";
@@ -260,7 +244,7 @@ qs("#form-decrypt").addEventListener("submit", async (e) => {
       toast("Archivo desencriptado");
     }
   }catch(err){
-    showError(outDecrypt, err);  // solo mensaje
+    showError(outDecrypt, err);
   }
 });
 
@@ -276,7 +260,7 @@ btnDownloadDecrypted.addEventListener("click", () => {
   a.remove();
 });
 
-/* Router de vistas */
+/* Router */
 function show(name, hook){
   Object.entries(views).forEach(([k,el]) => el.classList.toggle("hidden", k !== name));
   if(hook) hook();
@@ -285,8 +269,6 @@ function show(name, hook){
 async function preloadDecrypt(){
   const sess = Session.get();
   meIdDec.value = `${sess.nombre} (ID ${sess.id})`;
-
-  // resetear UI
   fileDecrypt.value = "";
   chosenDecrypt.textContent = "";
   outDecrypt.textContent = "";
@@ -297,17 +279,15 @@ async function preloadDecrypt(){
 /* Boot */
 function boot(){
   const sess = Session.get();
-  const logo = qs("#logo"); // referencia al logo
-
+  const logo = qs("#logo");
   if(!sess){
     navSession.classList.add("hidden");
     show("login");
-    if(logo) logo.classList.remove("hidden"); // logo visible en login
+    if(logo) logo.classList.remove("hidden");
     return;
   }
   lblUser.textContent = `Conectado como: ${sess.nombre} (ID ${sess.id})`;
   navSession.classList.remove("hidden");
   show("home");
 }
-
 boot();
